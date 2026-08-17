@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { AppSnapshot, Category, TimelineEntry } from '../../domain/models'
 import { deleteEntry, saveCategories } from '../../db/repository'
 import { dateToEpochDay } from '../../domain/dates'
-import { fitAll, fitLife, zoomViewport, type Viewport } from '../../domain/timeline'
+import { fitAll, fitLife, viewportWithSpan, zoomViewport, type Viewport } from '../../domain/timeline'
 import { AppShell } from '../../app/AppShell'
 import { useUiStore } from '../../app/store'
 import { TimelineCanvas } from './TimelineCanvas'
@@ -16,6 +16,14 @@ function savedViewport(): Viewport | null {
     return value && Number.isFinite(value.startDay) && Number.isFinite(value.endDay) && value.endDay > value.startDay ? value : null
   } catch { return null }
 }
+
+const quickScales = [
+  { label: '10 лет', days: 365.25 * 10 },
+  { label: '5 лет', days: 365.25 * 5 },
+  { label: '3 года', days: 365.25 * 3 },
+  { label: 'Год', days: 365.25 },
+  { label: 'Квартал', days: 365.25 / 4 },
+]
 
 export function TimelinePage({ snapshot, refresh }: { snapshot: AppSnapshot & { profile: NonNullable<AppSnapshot['profile']> }; refresh: () => Promise<void> }) {
   const { profile, categories, entries, settings } = snapshot
@@ -56,6 +64,7 @@ export function TimelinePage({ snapshot, refresh }: { snapshot: AppSnapshot & { 
           <div className="toolbar-actions">
             <button className="button button--primary" onClick={() => openEditor()}>+ Добавить</button>
             <div className="button-group"><button className="button button--quiet" onClick={() => setViewport(fitLife(profile))} title="Диапазон от рождения до сегодня">Моя жизнь</button><button className="button button--quiet" onClick={() => setViewport(fitAll(profile, entries))} title="Диапазон всех записей">Все записи</button></div>
+            <div className="button-group quick-scale-group" aria-label="Быстрый масштаб">{quickScales.map((scale) => <button className="button button--quiet" key={scale.label} onClick={() => setViewport(viewportWithSpan(viewport, scale.days))} title={`Показать ${scale.label.toLocaleLowerCase('ru-RU')} вокруг центра карты`}>{scale.label}</button>)}</div>
             <div className="button-group"><button className="icon-button icon-button--bordered" onClick={() => setViewport(zoomViewport(viewport, 1.25))} aria-label="Уменьшить масштаб" title="Уменьшить масштаб">−</button><button className="icon-button icon-button--bordered" onClick={() => setViewport(zoomViewport(viewport, 0.8))} aria-label="Увеличить масштаб" title="Увеличить масштаб">+</button><button className="button button--quiet" onClick={showToday} title="Вернуть линию Сегодня">Сегодня</button></div>
           </div>
         </div>

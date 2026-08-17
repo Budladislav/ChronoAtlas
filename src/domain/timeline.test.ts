@@ -1,5 +1,5 @@
 import type { Profile, TimelineEntry } from './models'
-import { entryDayRange, fitAll, fitLife, packIntoLanes, validateEntryDates, zoomViewport } from './timeline'
+import { entryDayRange, fitAll, fitLife, packIntoLanes, validateEntryDates, viewportWithSpan, zoomViewport } from './timeline'
 
 const profile: Profile = { id: 'primary', displayName: null, birthDate: '1990-01-01', createdAt: '', updatedAt: '' }
 const period = (id: string, start: string, end: string | null): TimelineEntry => ({ id, categoryId: 'c', title: id, notes: null, createdAt: '', updatedAt: '', kind: 'period', start: { value: start, precision: 'day', approximate: false }, end: end ? { value: end, precision: 'day', approximate: false } : null })
@@ -35,5 +35,11 @@ describe('геометрия карты', () => {
     const end = { value: '2023-01-01', precision: 'year' as const, approximate: false }
     expect(validateEntryDates('period', start, end)).toContain('раньше')
     expect(zoomViewport({ startDay: 0, endDay: 100 }, 0.0001).endDay - zoomViewport({ startDay: 0, endDay: 100 }, 0.0001).startDay).toBe(7)
+  })
+
+  it('устанавливает быстрый масштаб вокруг текущего центра', () => {
+    const viewport = viewportWithSpan({ startDay: 100, endDay: 300 }, 365.25)
+    expect(viewport.endDay - viewport.startDay).toBeCloseTo(365.25)
+    expect((viewport.startDay + viewport.endDay) / 2).toBe(200)
   })
 })

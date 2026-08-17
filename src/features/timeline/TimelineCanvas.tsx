@@ -1,4 +1,4 @@
-import { useMemo, useRef, type PointerEvent, type WheelEvent } from 'react'
+import { useMemo, useRef, type CSSProperties, type PointerEvent, type WheelEvent } from 'react'
 import { axisTicks, entryDayRange, packIntoLanes, panViewport, zoomViewport, type Viewport } from '../../domain/timeline'
 import { dateOnlyToEpochDay, dateToEpochDay, formatDateSpec } from '../../domain/dates'
 import type { Category, Profile, TimelineEntry } from '../../domain/models'
@@ -12,6 +12,15 @@ interface TimelineCanvasProps {
   onViewport: (viewport: Viewport) => void
   onSelectEntry: (id: string) => void
   onSelectLife: () => void
+}
+
+function visibleBarLabelStyle(left: number, width: number): CSSProperties {
+  const visibleStart = Math.max(0, left)
+  const visibleEnd = Math.min(100, left + width)
+  return {
+    left: `${((visibleStart - left) / width) * 100}%`,
+    width: `${(Math.max(0, visibleEnd - visibleStart) / width) * 100}%`,
+  }
 }
 
 export function TimelineCanvas({ profile, categories, entries, viewport, selectedId, onViewport, onSelectEntry, onSelectLife }: TimelineCanvasProps) {
@@ -62,7 +71,11 @@ export function TimelineCanvas({ profile, categories, entries, viewport, selecte
           {todayDay >= viewport.startDay && todayDay <= viewport.endDay && <div className="today-line" style={{ left: `${pct(todayDay)}%` }}><span>Сегодня</span></div>}
           <section className="timeline-row timeline-row--life" aria-label="Моя жизнь">
             <span className="timeline-row__caption">Моя жизнь</span>
-            <button className="life-bar" style={{ left: `${pct(birthDay)}%`, width: `${Math.max(0.4, pct(todayDay) - pct(birthDay))}%` }} onPointerDown={(event) => event.stopPropagation()} onClick={onSelectLife} title="Моя жизнь — открыть сведения"><span>{profile.displayName ? `Жизнь · ${profile.displayName}` : 'Моя жизнь'}</span></button>
+            {(() => {
+              const left = pct(birthDay)
+              const width = Math.max(0.4, pct(todayDay) - left)
+              return <button className="life-bar" style={{ left: `${left}%`, width: `${width}%` }} onPointerDown={(event) => event.stopPropagation()} onClick={onSelectLife} title="Моя жизнь — открыть сведения"><span className="timeline-bar__label" style={visibleBarLabelStyle(left, width)}>{profile.displayName ? `Жизнь · ${profile.displayName}` : 'Моя жизнь'}</span></button>
+            })()}
           </section>
           {visibleCategories.map((category) => {
             const categoryEntries = entriesByCategory.get(category.id) ?? []
@@ -81,7 +94,8 @@ export function TimelineCanvas({ profile, categories, entries, viewport, selecte
                   const dateLabel = entry.kind === 'moment' ? formatDateSpec(entry.date) : `${formatDateSpec(entry.start)} — ${entry.end ? formatDateSpec(entry.end) : 'сейчас'}`
                   if (entry.kind === 'moment') return <button key={entry.id} className={`moment-marker${entry.date.approximate ? ' is-approximate' : ''}${selectedId === entry.id ? ' is-selected' : ''}`} style={{ left: `${left}%`, top }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelectEntry(entry.id)} title={`${entry.title} · ${dateLabel}`} aria-label={`${entry.title}, ${dateLabel}`}><i /><span>{entry.title}</span></button>
                   const right = pct(range.endDay)
-                  return <button key={entry.id} className={`period-bar${entry.end === null ? ' is-ongoing' : ''}${entry.start.approximate || entry.end?.approximate ? ' is-approximate' : ''}${selectedId === entry.id ? ' is-selected' : ''}`} style={{ left: `${left}%`, width: `${Math.max(0.35, right - left)}%`, top, backgroundColor: category.color }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelectEntry(entry.id)} title={`${entry.title} · ${dateLabel}`}><span>{entry.title}</span></button>
+                  const width = Math.max(0.35, right - left)
+                  return <button key={entry.id} className={`period-bar${entry.end === null ? ' is-ongoing' : ''}${entry.start.approximate || entry.end?.approximate ? ' is-approximate' : ''}${selectedId === entry.id ? ' is-selected' : ''}`} style={{ left: `${left}%`, width: `${width}%`, top, backgroundColor: category.color }} onPointerDown={(event) => event.stopPropagation()} onClick={() => onSelectEntry(entry.id)} title={`${entry.title} · ${dateLabel}`}><span className="timeline-bar__label" style={visibleBarLabelStyle(left, width)}>{entry.title}</span></button>
                 })}
               </section>
             )

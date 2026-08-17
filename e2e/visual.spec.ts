@@ -26,6 +26,17 @@ test('визуальная матрица основных экранов и т�
   await addPeriod(page, 'Работа над важным проектом', 'Работа', '2021-03-01')
   await addPeriod(page, 'Переезд и новый дом', 'Жильё', '2016-05-12', false)
   await page.getByRole('button', { name: 'Все записи' }).click()
+  for (const scale of ['10 лет', '5 лет', '3 года', 'Год', 'Квартал']) await expect(page.getByRole('button', { name: scale, exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Квартал', exact: true }).click()
+  const visibleLabel = page.getByRole('button', { name: /Долгая линия с выразительным названием/ }).locator('.timeline-bar__label')
+  await expect(visibleLabel).toBeVisible()
+  const [labelBox, canvasBox] = await Promise.all([visibleLabel.boundingBox(), page.locator('.timeline-canvas').boundingBox()])
+  expect(labelBox).not.toBeNull()
+  expect(canvasBox).not.toBeNull()
+  expect(labelBox!.x).toBeGreaterThanOrEqual(canvasBox!.x)
+  expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(canvasBox!.x + canvasBox!.width + 1)
+  await page.screenshot({ path: testInfo.outputPath('map-quarter-sticky-label-1440x900.png'), fullPage: true })
+  await page.getByRole('button', { name: 'Все записи' }).click()
 
   for (const viewport of [{ width: 1366, height: 768 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(viewport)

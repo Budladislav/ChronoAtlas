@@ -9,15 +9,22 @@ interface ModalProps {
 
 export function Modal({ title, children, onClose, size = 'medium' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const panel = panelRef.current
-    const first = panel?.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]:not([tabindex="-1"])')
+    const first = panel?.querySelector<HTMLElement>('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+      ?? panel?.querySelector<HTMLElement>('button:not([disabled]), [href]')
     first?.focus()
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        onCloseRef.current()
       }
       if (event.key === 'Tab' && panel) {
         const focusable = [...panel.querySelectorAll<HTMLElement>('input, select, textarea, button, [href], [tabindex]:not([tabindex="-1"])')].filter((item) => !item.hasAttribute('disabled'))
@@ -36,7 +43,7 @@ export function Modal({ title, children, onClose, size = 'medium' }: ModalProps)
       document.removeEventListener('keydown', keydown)
       previous?.focus()
     }
-  }, [onClose])
+  }, [])
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>

@@ -53,6 +53,12 @@ export function zoomViewport(viewport: Viewport, factor: number, anchor = 0.5): 
   return { startDay: anchorDay - nextSpan * anchor, endDay: anchorDay + nextSpan * (1 - anchor) }
 }
 
+export function viewportWithSpan(viewport: Viewport, spanDays: number): Viewport {
+  const nextSpan = Math.max(7, Math.min(365 * 500, spanDays))
+  const centerDay = (viewport.startDay + viewport.endDay) / 2
+  return { startDay: centerDay - nextSpan / 2, endDay: centerDay + nextSpan / 2 }
+}
+
 export function panViewport(viewport: Viewport, dayDelta: number): Viewport {
   return { startDay: viewport.startDay + dayDelta, endDay: viewport.endDay + dayDelta }
 }
